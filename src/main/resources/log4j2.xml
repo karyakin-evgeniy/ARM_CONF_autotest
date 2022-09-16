@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration status="WARN">
+    <appenders>
+
+        <File name="PassedTests" fileName="logs/passedTests.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <Filters>
+                <ThresholdFilter level="warn" onMatch="DENY"   onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="info" onMatch="ACCEPT" onMismatch="DENY" />
+            </Filters>
+        </File>
+
+        <File name="ElementsNotFound" fileName="logs/elementsNotFound.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <Filters>
+                <ThresholdFilter level="error" onMatch="DENY"   onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="warn" onMatch="ACCEPT" onMismatch="DENY" />
+            </Filters>
+        </File>
+
+        <File name="FailedTests" fileName="logs/failedTests.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <Filters>
+                <!--<ThresholdFilter level="warn" onMatch="DENY"   onMismatch="NEUTRAL"/>
+                <ThresholdFilter level="info" onMatch="DENY"   onMismatch="NEUTRAL"/>-->
+                <ThresholdFilter level="error" onMatch="ACCEPT" onMismatch="DENY" />
+            </Filters>
+        </File>
+
+        <File name="AllRequests" fileName="logs/allRequests.log">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <Filters>
+                <ThresholdFilter level="debug" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </File>
+
+    </appenders>
+
+    <loggers>
+
+
+        <root level="debug">
+            <appender-ref ref="PassedTests" level="info"/>
+            <appender-ref ref="ElementsNotFound" level="warn"/>
+            <appender-ref ref="FailedTests" level="error"/>
+            <appender-ref ref="AllRequests" level="debug"/>
+        </root>
+
+    </loggers>
+</configuration>

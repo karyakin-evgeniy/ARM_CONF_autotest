@@ -1,0 +1,38 @@
+{
+  "paths": {
+    "pathToArm": "C:\\Users\\SESA619710\\Downloads\\АРМ-Конф Тестрелиз\\2022.08.09-v1.13.0.56226Arm\\ArmEdit.exe",
+    "pathToConf": "C:\\Program Files (x86)\\Механотроника\\Конфигуратор-МТ\\Configurator-MT.exe",
+    "pathToLinkMT": "C:\\Program Files (x86)\\Механотроника\\Конфигуратор-МТ\\Link-MT\\LINKMT.Host.exe",
+    "pathForOsc": "C:\\Users\\SESA619710\\Downloads\\result",
+    "pathForDocument": "C:\\Users\\SESA619710\\Downloads\\result"
+  },
+  "bfpo": {
+    "bfpoDirectory": "C:\\Users\\SESA619710\\Desktop\\bfpo\\ПрО",
+    "bfpoName": "BFPO-152-KSZ-01_25.sth",
+    "pmkName": "BFPO-152-KSZ-01_25.sth_a"
+  },
+  "test": {
+    "allTestStart": true,
+    "TC_ARM_CFG_Compile": false,
+    "TC_Link_MT": false,
+    "TC_redundancy_protocol": false,
+    "TC_change_project_param_and_get_osc": false,
+    "TC_rename_input_output": true,
+    "TC_add_image": false,
+    "TC_download_document": false,
+    "TC_Ethernet_connect": false,
+    "TC_USB_Connection": false
+  },
+  "ip": "192.168.11.166",
+  "image": {
+    "directory": "C:\\Users\\SESA619710\\Downloads",
+    "name": "InfoCircle_x24.png"
+  },
+  "TC_redundancy_protocol": {
+    "RayMode": true,
+    "RSTP": true,
+    "PRP": true,
+    "LinkBackUp": true,
+    "HSR": false
+  }
+}
