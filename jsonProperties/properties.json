@@ -1,6 +1,6 @@
 {
   "paths": {
-    "pathToArm": "C:\\Users\\SESA619710\\Downloads\\АРМ-Конф Тестрелиз\\2022.08.09-v1.13.0.56226Arm\\ArmEdit.exe",
+    "pathToArm": "C:\\Users\\SESA619710\\Downloads\\АРМ-Конф Тестрелиз\\2022.09.22-v1.13.0.60448\\ArmEdit.exe",
     "pathToConf": "C:\\Program Files (x86)\\Механотроника\\Конфигуратор-МТ\\Configurator-MT.exe",
     "pathToLinkMT": "C:\\Program Files (x86)\\Механотроника\\Конфигуратор-МТ\\Link-MT\\LINKMT.Host.exe",
     "pathForOsc": "C:\\Users\\SESA619710\\Downloads\\result",
@@ -12,21 +12,25 @@
     "pmkName": "BFPO-152-KSZ-01_25.sth_a"
   },
   "test": {
-    "allTestStart": true,
+    "allTestStart": false,
     "TC_ARM_CFG_Compile": false,
     "TC_Link_MT": false,
     "TC_redundancy_protocol": false,
     "TC_change_project_param_and_get_osc": false,
     "TC_rename_input_output": true,
-    "TC_add_image": false,
-    "TC_download_document": false,
+    "TC_add_components_area": true,
+    "TC_download_document": true,
     "TC_Ethernet_connect": false,
-    "TC_USB_Connection": false
+    "TC_USB_Connection": false,
+    "TC_download_blanks": false,
+    "TC_save_block_image": true,
+    "TC_interrupt_transmission": true,
+    "TC_setting_ASU": true
   },
   "ip": "192.168.11.166",
   "image": {
-    "directory": "C:\\Users\\SESA619710\\Downloads",
-    "name": "InfoCircle_x24.png"
+    "directory": "C:\\РАБОТА\\ТЕСТИРОВАНИЕ\\ARM_CONF_autotest\\images",
+    "name": "Link-MT.png"
   },
   "TC_redundancy_protocol": {
     "RayMode": true,
@@ -34,5 +38,10 @@
     "PRP": true,
     "LinkBackUp": true,
     "HSR": false
+  },
+  "debug": {
+    "useOpenConf": false,
+    "openProject": false,
+    "needToCloseApp": true
   }
 }
