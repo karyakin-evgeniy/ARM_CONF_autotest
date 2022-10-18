@@ -1,10 +1,11 @@
 {
   "paths": {
-    "pathToArm": "C:\\Users\\SESA619710\\Downloads\\АРМ-Конф Тестрелиз\\2022.09.22-v1.13.0.60448\\ArmEdit.exe",
+    "pathToArm": "C:\\Users\\SESA619710\\Documents\\АРМ-Конф Тестрелиз\\2022.10.04-v1.13.1.61601Arm\\ArmEdit.exe",
     "pathToConf": "C:\\Program Files (x86)\\Механотроника\\Конфигуратор-МТ\\Configurator-MT.exe",
     "pathToLinkMT": "C:\\Program Files (x86)\\Механотроника\\Конфигуратор-МТ\\Link-MT\\LINKMT.Host.exe",
     "pathForOsc": "C:\\Users\\SESA619710\\Downloads\\result",
-    "pathForDocument": "C:\\Users\\SESA619710\\Downloads\\result"
+    "pathForDocument": "C:\\Users\\SESA619710\\Downloads\\result",
+    "pathToResultExcel": "C:\\Users\\SESA619710\\Desktop\\resultCONFTest"
   },
   "bfpo": {
     "bfpoDirectory": "C:\\Users\\SESA619710\\Desktop\\bfpo\\ПрО",
@@ -17,15 +18,15 @@
     "TC_Link_MT": false,
     "TC_redundancy_protocol": false,
     "TC_change_project_param_and_get_osc": false,
-    "TC_rename_input_output": true,
-    "TC_add_components_area": true,
-    "TC_download_document": true,
+    "TC_rename_input_output": false,
+    "TC_add_components_area": false,
+    "TC_download_document": false,
     "TC_Ethernet_connect": false,
-    "TC_USB_Connection": false,
+    "TC_USB_Connection": true,
     "TC_download_blanks": false,
-    "TC_save_block_image": true,
-    "TC_interrupt_transmission": true,
-    "TC_setting_ASU": true
+    "TC_save_block_image": false,
+    "TC_interrupt_transmission": false,
+    "TC_setting_ASU": false
   },
   "ip": "192.168.11.166",
   "image": {
@@ -42,6 +43,7 @@
   "debug": {
     "useOpenConf": false,
     "openProject": false,
-    "needToCloseApp": true
+    "needToCloseApp": true,
+    "needToConnect": true
   }
 }
