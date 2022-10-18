@@ -3,6 +3,12 @@ import io.appium.java_client.windows.WindowsDriver;
 import io.appium.java_client.windows.WindowsElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.poi.hssf.usermodel.HSSFCellStyle;
+import org.apache.poi.hssf.usermodel.HSSFFont;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.json.JSONObject;
 import org.openqa.selenium.*;
 import org.openqa.selenium.NoSuchElementException;
@@ -13,6 +19,8 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -20,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.List;
@@ -48,6 +57,7 @@ public class Main {
     private static String bfpoDirectory;
     private static String bfpoName;
     private static String pmkName;
+    private static List<TestResult> allTestResults = new ArrayList<>();
 
     public static void main(String[] args) throws IOException, InterruptedException {
         setUp();
@@ -55,6 +65,7 @@ public class Main {
         closeConfigurator();
         resultString.append("Результаты тестирования: ");
         JSONObject tests = properties.getJSONObject("test");
+        LocalDateTime start = LocalDateTime.now();
         boolean startAllTests = tests.getBoolean("allTestStart");
         if (startAllTests || tests.getBoolean("TC_ARM_CFG_Compile")) {
             testRunner("TC_ARM_CFG_Compile");
@@ -97,12 +108,13 @@ public class Main {
         }
         Thread.sleep(5000);
         System.out.println(resultString);
+        writeTestResults(start);
         Runtime.getRuntime().exit(testStatus);
 
         closeDriver();
     }
 
-    public static void TCDownloadDocument() throws Exception {
+    public static void TCDownloadDocument(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         sleep(4);
         configDriver = driver;
@@ -145,7 +157,7 @@ public class Main {
 
 
             addToCopyBuffer(doc);
-            driver.findElementByClassName("AppControlHost").findElementByName("Имя файла:").sendKeys(Keys.CONTROL + "v" + Keys.ENTER);
+            driver.findElementByClassName("AppControlHost").findElementByName("Имя файла:").sendKeys(Keys.CONTROL + "v" + Keys.CONTROL + Keys.ENTER);
 
 
 //                findElementByNameAndClick("Сохранить");
@@ -172,7 +184,7 @@ public class Main {
 
     }
 
-    public static void TCRenameInputOutput() throws Exception {
+    public static void TCRenameInputOutput(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         sleep(4);
         configDriver = driver;
@@ -299,7 +311,7 @@ public class Main {
 
     }
 
-    public static void TCAddComponentsArea() throws Exception {
+    public static void TCAddComponentsArea(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         Thread.sleep(4000);
         configDriver = driver;
@@ -412,7 +424,7 @@ public class Main {
 
     }
 
-    public static void TCChangeProjectParamAndGetOsc() throws Exception {
+    public static void TCChangeProjectParamAndGetOsc(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         Thread.sleep(4000);
         configDriver = driver;
@@ -433,14 +445,14 @@ public class Main {
             choiceButton("Настройки РЗА");
             findElementByNameAndClick("Параметры проекта");
 
-            setParameterValue("Заказчик*", "aa");
-            setParameterValue("Объект*", "bb");
-            setParameterValue("Присоединение/комплект*", "cc");
-            setParameterValue("Проектная документация*", "dd");
-            setParameterValue("Номер приложения*", "ee");
+            setParameterValue("Заказчик", "aa");
+            setParameterValue("Объект", "bb");
+            setParameterValue("Присоединение/комплект", "cc");
+            setParameterValue("Проектная документация", "dd");
+            setParameterValue("Номер приложения", "ee");
             setParameterValue("Комментарий", "ff");
-            setParameterValue("Организация*", "gg");
-            setParameterValue("Исполнитель*", "hh");
+            setParameterValue("Организация", "gg");
+            setParameterValue("Исполнитель", "hh");
 
             applyingAndPushing();
 
@@ -486,14 +498,14 @@ public class Main {
             choiceButton("Настройки РЗА");
             findElementByNameAndClick("Параметры проекта");
 
-            setParameterValue("Заказчик*", "a");
-            setParameterValue("Объект*", "b");
-            setParameterValue("Присоединение/комплект*", "c");
-            setParameterValue("Проектная документация*", "d");
-            setParameterValue("Номер приложения*", "e");
+            setParameterValue("Заказчик", "a");
+            setParameterValue("Объект", "b");
+            setParameterValue("Присоединение/комплект", "c");
+            setParameterValue("Проектная документация", "d");
+            setParameterValue("Номер приложения", "e");
             setParameterValue("Комментарий", "f");
-            setParameterValue("Организация*", "g");
-            setParameterValue("Исполнитель*", "h");
+            setParameterValue("Организация", "g");
+            setParameterValue("Исполнитель", "h");
 
             applyingAndPushing();
 
@@ -515,7 +527,7 @@ public class Main {
 
     }
 
-    public static void TCRedundancyProtocols() throws Exception {
+    public static void TCRedundancyProtocols(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         Thread.sleep(4000);
         configDriver = driver;
@@ -525,14 +537,7 @@ public class Main {
         } else {
 
 
-            findElementByNameAndClick("Подключиться (Ctrl+Q)");
-            System.out.println("Connect");
-//                driver.getKeyboard().sendKeys(Keys.CONTROL + "q" + Keys.CONTROL);
-            sleep(15);
-
-            differentProperties();
-            hideInformation();
-            System.out.println("hideInfo");
+            connect();
 
             choiceButton("Коммуникации");
 
@@ -669,10 +674,9 @@ public class Main {
             }
         }
 
-
     }
 
-    public static void TCEthernetConnect() throws Exception {
+    public static void TCEthernetConnect(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         Thread.sleep(4000);
 
@@ -725,11 +729,9 @@ public class Main {
             closeDriver();
             throw new Exception();
         }
-
-
     }
 
-    public static void TCUSBConnection() throws Exception {
+    public static void TCUSBConnection(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         sleep(4);
 
@@ -780,10 +782,9 @@ public class Main {
             throw new Exception();
         }
 
-
     }
 
-    public static void TCLinkMT() throws MalformedURLException, InterruptedException {
+    public static void TCLinkMT(TestResult testResult) throws MalformedURLException, InterruptedException {
         try {
             driver = new WindowsDriver<WindowsElement>(new URL(urlWinApp), capForOpenLinkMT);
         } catch (SessionNotCreatedException ignored) {
@@ -806,12 +807,13 @@ public class Main {
 
     }
 
-    public static void TC_ARM_CFG_Compile() throws Exception {
+    public static void TC_ARM_CFG_Compile(TestResult testResult) throws Exception {
         openApp(capForOpenARM);
         actions = new Actions(driver);
 
         if (!openFileARM(bfpoDirectory, bfpoName)) {
             LOGGER.error("Файл " + bfpoName + " не открылся");
+            throw new Exception("Файл " + bfpoName + " не открылся");
         } else {
             LocalDateTime finishArm = LocalDateTime.now().plusMinutes(7);
 
@@ -869,7 +871,7 @@ public class Main {
         }
     }
 
-    public static void TCDownloadBlanks() throws Exception {
+    public static void TCDownloadBlanks(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         sleep(4);
 
@@ -892,14 +894,14 @@ public class Main {
             choiceButton("Настройки РЗА");
             findElementByNameAndClick("Параметры проекта");
 
-            setParameterValue("Заказчик*", Keys.DELETE);
-            setParameterValue("Объект*", Keys.DELETE);
-            setParameterValue("Присоединение/комплект*", Keys.DELETE);
-            setParameterValue("Проектная документация*", Keys.DELETE);
-            setParameterValue("Номер приложения*", Keys.DELETE);
+            setParameterValue("Заказчик", Keys.DELETE);
+            setParameterValue("Объект", Keys.DELETE);
+            setParameterValue("Присоединение/комплект", Keys.DELETE);
+            setParameterValue("Проектная документация", Keys.DELETE);
+            setParameterValue("Номер приложения", Keys.DELETE);
             setParameterValue("Комментарий", Keys.DELETE);
-            setParameterValue("Организация*", Keys.DELETE);
-            setParameterValue("Исполнитель*", Keys.DELETE);
+            setParameterValue("Организация", Keys.DELETE);
+            setParameterValue("Исполнитель", Keys.DELETE);
 
             findElementByNameAndClick("Бланки (Ctrl+B)");
 
@@ -914,14 +916,14 @@ public class Main {
             findElementByNameAndClick("Параметры проекта");
 
 
-            setParameterValue("Заказчик*", "a");
-            setParameterValue("Объект*", "b");
-            setParameterValue("Присоединение/комплект*", "c");
-            setParameterValue("Проектная документация*", "d");
-            setParameterValue("Номер приложения*", "e");
+            setParameterValue("Заказчик", "a");
+            setParameterValue("Объект", "b");
+            setParameterValue("Присоединение/комплект", "c");
+            setParameterValue("Проектная документация", "d");
+            setParameterValue("Номер приложения", "e");
             setParameterValue("Комментарий", "f");
-            setParameterValue("Организация*", "g");
-            setParameterValue("Исполнитель*", "h");
+            setParameterValue("Организация", "g");
+            setParameterValue("Исполнитель", "h");
             hideInformation();
 
 
@@ -929,17 +931,25 @@ public class Main {
             LocalDateTime start = LocalDateTime.now();
             sleep(20);
             while (checkHaveElementWithName("Экспорт настроек проекта в файл MS Word")) {
-                sleep(10);
+                sleep(20);
             }
 
 
+            sleep(10);
             boolean passTest = true;
             choiceWindowsRoot();
-            if (checkHaveElementWithName("Документ1 - Word") && LocalDateTime.now().isBefore(start.plus(180, ChronoUnit.SECONDS))) {
-                choiceWindowWithName("Документ1 - Word");
+            driver.findElementsByClassName("OpusApp").forEach(windowsElement -> System.out.println(windowsElement.getAttribute("Name")));
+            if (checkHaveElementWithName("Документ1 - Word") && LocalDateTime.now().isBefore(start.plus(600, ChronoUnit.SECONDS))) {
 
+                choiceWindowWithName("Документ1 - Word");
+                System.out.println("выбран \"Документ1 - Word\"");
                 findElementByNameAndClick("Закрыть");
-                findElementByNameAndClick("Сохранить");
+                if (checkHaveElementWithName("Выбрать расположение")) {
+                    findElementByNameAndClick("Выбрать расположение");
+                    findElementByNameAndClick("Другие места");
+                } else {
+                    findElementByNameAndClick("Сохранить");
+                }
                 String directory = properties.getJSONObject("paths").getString("pathForDocument");
                 String docName = "Конфигурация блока БМРЗ.docx";
                 File doc = new File(directory + "\\" + docName);
@@ -958,10 +968,12 @@ public class Main {
                     System.out.println("Тест TC_download_blanks завершился с положительным результатом");
 
                 } else {
+                    testResult.addCommentInRun("Документ не сохранился или сохранился некорректно");
                     passTest = false;
                 }
 
             } else {
+                testResult.addCommentInRun("Документ не открылся, проверьте, что программа Microsoft Office (Word) установлена");
                 passTest = false;
             }
             if (!passTest) {
@@ -969,7 +981,6 @@ public class Main {
                 checkSaveProject(false);
                 closeDriver();
                 LOGGER.error("Тест TC_download_blanks завершился неудачно");
-//                LOGGER.error("Имя осциллогаммы не корректное");
                 throw new Exception();
 
             }
@@ -978,7 +989,7 @@ public class Main {
 
     }
 
-    public static void TCSaveBlockImage() throws Exception {
+    public static void TCSaveBlockImage(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         sleep(4);
 
@@ -1017,10 +1028,11 @@ public class Main {
             if (checkHaveElementWithName("Подтвердить сохранение в виде")) {
                 findElementByNameAndClick("Да");
             }
-//            while (checkHaveElementWithName("Загрузка образа блока") && LocalDateTime.now().isBefore(start.plusMinutes(2))) {
-//                sleep(5);
-//            }
-            sleep(60);
+            LocalDateTime start = LocalDateTime.now();
+            while (checkHaveElementWithName("Отменить загрузку") && LocalDateTime.now().isBefore(start.plusMinutes(4))) {
+                sleep(10);
+            }
+//            sleep(120);
             if (checkHaveElementWithName("Образ блока УСПЕШНО загружен из блока и сохранен на диске!") && new File(directory, fileName).exists()) {
                 findElementByNameAndClick("OK");
                 driver = configDriver;
@@ -1046,6 +1058,7 @@ public class Main {
 
 
             } else {
+                testResult.addCommentInRun("Процесс загрузки образа блока не завершился или завершился некорректно");
                 passTest = false;
             }
 
@@ -1062,7 +1075,7 @@ public class Main {
         }
     }
 
-    public static void TCInterruptTransmission() throws Exception {
+    public static void TCInterruptTransmission(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         Thread.sleep(4000);
         configDriver = driver;
@@ -1090,6 +1103,7 @@ public class Main {
 
             if (!value.getAttribute("Name").equals("0.03")) {
                 passTest = false;
+                testResult.addCommentInRun("Некорректно записалось значение уставки!");
                 LOGGER.error("Некорректно записалось значение уставки!");
             } else {
                 findElementByNameAndClick("Записать (Ctrl+W)");
@@ -1132,7 +1146,7 @@ public class Main {
         }
     }
 
-    public static void TCSettingASU() throws Exception {
+    public static void TCSettingASU(TestResult testResult) throws Exception {
         openApp(capForOpenConf);
         Thread.sleep(4000);
         configDriver = driver;
@@ -1145,16 +1159,63 @@ public class Main {
         } else {
 
             actions = new Actions(driver);
-            findElementByNameAndClick("Подключиться (Ctrl+Q)");
-            System.out.println("Connect");
-//                driver.getKeyboard().sendKeys(Keys.CONTROL + "q" + Keys.CONTROL);
-            sleep(15);
-
-            differentProperties();
-            hideInformation();
             driver = configDriver;
 
+            connect();
+
+
             choiceButton("Коммуникации");
+
+
+//            ==================================================================
+//            Изменение протоколов
+
+            actions = new Actions(driver);
+
+            if (!test60870("101", directoryForDocument, testResult)) {
+                passTest = false;
+            }
+            if (!test60870("103", directoryForDocument, testResult)) {
+                passTest = false;
+            }
+            if (!test60870("104", directoryForDocument, testResult)) {
+                passTest = false;
+            }
+            if (!test60870("RTU", directoryForDocument, testResult)) {
+                passTest = false;
+            }
+            if (!test60870("TCP", directoryForDocument, testResult)) {
+                passTest = false;
+            }
+            if (!test60870("J-Bus", directoryForDocument, testResult)) {
+                passTest = false;
+            }
+
+
+            driver.findElementByName("Протоколы АСУ").findElementByName("IEC 61850-8-1").click();
+            sleep(1);
+            WindowsElement TOsrab = driver.findElementByName("ТО сраб.");
+            TOsrab.click();
+            sleep(1);
+            dragAndDrop(TOsrab, -350, 50);
+
+            recordProject();
+
+            List<WindowsElement> allTOsrab = driver.findElementsByName("ТО сраб.");
+            allTOsrab.remove(TOsrab);
+            allTOsrab.get(0).click();
+            driver.getKeyboard().sendKeys(Keys.DELETE);
+            allTOsrab = driver.findElementsByName("ТО сраб.");
+            if (allTOsrab.size() > 1) {
+                passTest = false;
+                addResultString("Элемент ТОсраб. не был удален", testResult);
+            }
+            recordProject();
+
+//            =============================================================
+//            Изменение настроек в разделе Интерфейсы
+
+
             findElementByNameAndClick("Интерфейсы");
             findElementByNameAndClick("1");
             actions.moveByOffset(-55, 0).click().build().perform();
@@ -1211,10 +1272,11 @@ public class Main {
                 exceptionString = "Некорректно работает отмена протокола Modbus-MT/TCP!";
                 findElementByNameAndClick("ОК");
                 passTest = false;
-                resultString.append("В тесте TC_setting_ASU повторился баг с неккоректной отмене протокола Modbus-MT/TCP!");
+                addResultString("В тесте TC_setting_ASU повторился баг с неккоректной отмене протокола Modbus-MT/TCP!", testResult);
+                findElementByNameAndClick("Подключиться (Ctrl+Q)");
+            } else {
+                findElementByNameAndClick("Отмена");
             }
-            findElementByNameAndClick("Подключиться (Ctrl+Q)");
-            System.out.println("Connect");
 //                driver.getKeyboard().sendKeys(Keys.CONTROL + "q" + Keys.CONTROL);
             sleep(15);
 
@@ -1244,7 +1306,7 @@ public class Main {
             if (!checkHaveElementWithName("В проекте обнаружены критические ошибки. \nЗапись динамических данных в блок недопустима!\nСмотрите в области \"Информация\" вкладку \"Компиляция\"!")) {
                 findElementByNameAndClick("Отмена");
                 passTest = false;
-                resultString.append("В тесте TC_setting_ASU в данный блок PTPv2 записываться не должен");
+                addResultString("В тесте TC_setting_ASU в данный блок PTPv2 записываться не должен", testResult);
             }
             findElementByNameAndClick("ОК");
 
@@ -1262,6 +1324,10 @@ public class Main {
             sleep(1);
             actions.moveByOffset(-100, 0).click().build().perform();
             flags.get(flags.size() - 2).click();
+
+
+//              ======================================================================
+//            Изменение протоколов синхронизации времени
 
 
             findElementByNameAndClick("NMEA, TSIP, SNTP");
@@ -1299,6 +1365,10 @@ public class Main {
 
 
             recordProject();
+
+
+//            ================================================================================
+//            Настройка вкладки IEC 60870-5
 
             findElementByNameAndClick("IEC 60870-5");
 
@@ -1393,7 +1463,7 @@ public class Main {
 
             if (driver.findElementsByName("Да").size() != 4) {
                 passTest = false;
-                resultString.append("В тесте TC_setting_ASU не изменилось значение для ответов в настройках протоколов IEC 60870-5");
+                addResultString("В тесте TC_setting_ASU не изменилось значение для ответов в настройках протоколов IEC 60870-5", testResult);
             }
 
             timeSinch101.click();
@@ -1540,40 +1610,6 @@ public class Main {
 
             recordProject();
 
-            if (!test60870("101", directoryForDocument)) {
-                passTest = false;
-            }
-            if (!test60870("103", directoryForDocument)) {
-                passTest = false;
-            }
-            if (!test60870("104", directoryForDocument)) {
-                passTest = false;
-            }
-            if (!test60870("RTU", directoryForDocument)) {
-                passTest = false;
-            }
-            if (!test60870("TCP", directoryForDocument)) {
-                passTest = false;
-            }
-
-
-            driver.findElementByName("Протоколы АСУ").findElementByName("IEC 61850-8-1").click();
-            WindowsElement TOsrab = driver.findElementByName("ТО сраб.");
-            dragAndDrop(TOsrab, -350, 50);
-
-            recordProject();
-
-            List<WindowsElement> allTOsrab = driver.findElementsByName("ТО сраб.");
-            allTOsrab.remove(TOsrab);
-            allTOsrab.get(0).click();
-            driver.getKeyboard().sendKeys(Keys.DELETE);
-            allTOsrab = driver.findElementsByName("ТО сраб.");
-            if (allTOsrab.size() > 1) {
-                passTest = false;
-                resultString.append("Элемент ТОсраб. не был удален");
-            }
-            recordProject();
-
             driver = configDriver;
             if (passTest) {
                 LOGGER.info("Тест TC_setting_ASU завершился удачно!");
@@ -1594,11 +1630,15 @@ public class Main {
         driver.findElementByName("Область компонентов и органов управления").findElementByClassName("AfxFrameOrView120u").click();
     }
 
-    public static void catchException(String textError, String testName, Exception e) {
+    public static void catchException(String textError, String testName, Exception e, TestResult testResult) {
         System.out.println(textError + testName);
         LOGGER.error(textError, testName);
         LOGGER.error(e);
         e.printStackTrace();
+        StringBuilder stackTrace = new StringBuilder();
+        stackTrace.append(e).append("\n");
+        Arrays.stream(e.getStackTrace()).forEach(stackTraceElement -> stackTrace.append(stackTraceElement.toString()).append("\n"));
+        testResult.failedTest(textError, stackTrace.toString());
         closeDriver();
         testStatus = 1;
     }
@@ -1606,12 +1646,14 @@ public class Main {
     public static void differentProperties() throws MalformedURLException, InterruptedException {
         if (!checkHaveElementWithName("Configurator-MT")) {
             choiceWindowsRoot();
-            if (checkHaveElementWithName("Configurator-MT")) {
-                choiceWindowWithName("Configurator-MT");
-                findElementByNameAndClick("ОК");
-                driver.close();
+            try {
+                if (checkHaveElementWithName("Configurator-MT")) {
+                    choiceWindowWithName("Configurator-MT");
+                    findElementByNameAndClick("ОК");
+//                driver.close();
 
-            }
+                }
+            } catch (NoSuchWindowException | SessionNotCreatedException ignored) {}
         } else {
             findElementByNameAndClick("ОК");
 
@@ -1619,10 +1661,9 @@ public class Main {
 
     }
 
-    public static boolean test60870(String protocol, String directoryForDocument) throws InterruptedException, MalformedURLException {
+    public static boolean test60870(String protocol, String directoryForDocument, TestResult testResult) throws InterruptedException, MalformedURLException {
         driver.findElementByName("Протоколы АСУ").findElementByName(protocol).click();
         boolean passTest = true;
-
 
         WindowsElement equipmentLayout = null;
         WindowsElement analogValue = null;
@@ -1630,72 +1671,141 @@ public class Main {
         WindowsElement clearBuffer = null;
         WindowsElement maxValue = null;
         WindowsElement generalFunction = null;
-        if (!(protocol.equals("RTU") || protocol.equals("TCP")) && checkHaveElementWithName("Is not set")) {
-            equipmentLayout = driver.findElementByName("Is not set");
-            equipmentLayout.click();
-            doubleClick();
-            actions.sendKeys("1" + Keys.ENTER).build().perform();
-            if (!equipmentLayout.getAttribute("Name").equals("Is not set1")) {
-                passTest = false;
-                resultString.append("Дополнительные настройки расположения аппаратурыне защиты не изменились\n");
-            }
-        }
+        WindowsElement elementWith00 = null;
+        WindowsElement elementWith00000000 = null;
+        WindowsElement elementWith000000 = null;
+        WindowsElement elementWith1 = null;
+
+//        ================================================================
+//        Изменение доп настроек
+
         if (checkHaveElementWithName("Вторичное")) {
             analogValue = driver.findElementByName("Вторичное");
             analogValue.click();
             doubleClick();
             if (!analogValue.getAttribute("Name").equals("Первичное")) {
                 passTest = false;
-                resultString.append("Дополнительные настройки аналоговых значений не изменились\n");
+                addResultString("Дополнительные настройки аналоговых значений не изменились\n", testResult);
             }
         }
-        if (!(protocol.equals("RTU") || protocol.equals("TCP")) && checkHaveElementWithName("Нет") && checkHaveElementWithName("Да")) {
-            timezone = driver.findElementByName("Нет");
-            clearBuffer = driver.findElementByName("Да");
-            timezone.click();
-            doubleClick();
-            clearBuffer.click();
-            doubleClick();
-            if (!timezone.getAttribute("Name").equals("Да")
-                    && !clearBuffer.getAttribute("Name").equals("Нет")) {
+        if (!(protocol.equals("RTU") || protocol.equals("TCP"))) {
+            if (checkHaveElementWithName("Is not set")) {
+                equipmentLayout = driver.findElementByName("Is not set");
+                equipmentLayout.click();
+                doubleClick();
+                actions.sendKeys("1" + Keys.ENTER).build().perform();
+                if (!equipmentLayout.getAttribute("Name").equals("Is not set1")) {
+                    passTest = false;
+                    addResultString("Дополнительные настройки расположения аппаратурыне защиты не изменились\n", testResult);
+                }
+            }
+            if (checkHaveElementWithName("Нет") && checkHaveElementWithName("Да")) {
+                timezone = driver.findElementByName("Нет");
+                clearBuffer = driver.findElementByName("Да");
+                timezone.click();
+                doubleClick();
+                clearBuffer.click();
+                doubleClick();
+                if (!timezone.getAttribute("Name").equals("Да")
+                        && !clearBuffer.getAttribute("Name").equals("Нет")) {
+                    passTest = false;
+                    addResultString("Дополнительные настройки не изменились\n", testResult);
+                }
+            }
+        }
+        if (Objects.equals(protocol, "103")) {
+            if (checkHaveElementWithName("1.2")){
+                maxValue = driver.findElementByName("1.2");
+                maxValue.click();
+                doubleClick();
+                if (!maxValue.getAttribute("Name").equals("2.4")) {
+                    passTest = false;
+                    addResultString("Дополнительные настройки максимального значения не изменились\n", testResult);
+                }
+            }
+            if (checkHaveElementWithName("1")) {
+                generalFunction = driver.findElementByName("1");
+                generalFunction.click();
+                doubleClick();
+                actions.sendKeys("1" + Keys.ENTER).build().perform();
+                if (!generalFunction.getAttribute("Name").equals("11")) {
+                    passTest = false;
+                    addResultString("Дополнительные настройки основной функции блока не изменились\n", testResult);
+                }
+            }
+        }
+        if (protocol.equals("J-Bus")) {
+            List<WindowsElement> allElementsWith0000 = driver.findElementsByName("0000");
+            for (WindowsElement element : allElementsWith0000) {
+                element.click();
+                doubleClick();
+                actions.sendKeys(Keys.BACK_SPACE + "1" + Keys.ENTER).build().perform();
+            }
+            if (checkHaveElementWithName("00")) {
+                elementWith00 = driver.findElementByName("00");
+                elementWith00.click();
+                doubleClick();
+                actions.sendKeys(Keys.BACK_SPACE + "1" + Keys.ENTER).build().perform();
+            }
+            if (checkHaveElementWithName("00000000")) {
+                elementWith00000000 = driver.findElementByName("00000000");
+                elementWith00000000.click();
+                doubleClick();
+                actions.sendKeys(Keys.BACK_SPACE + "1" + Keys.ENTER).build().perform();
+            }
+            if (checkHaveElementWithName("000000")) {
+                elementWith000000 = driver.findElementByName("000000");
+                elementWith000000.click();
+                doubleClick();
+                actions.sendKeys(Keys.BACK_SPACE + "1" + Keys.ENTER).build().perform();
+            }
+            if (checkHaveElementWithName("1")) {
+                elementWith1 = driver.findElementByName("1");
+                elementWith1.click();
+                doubleClick();
+            }
+
+            if (driver.findElementsByName("0001").size() != 10 || !checkHaveElementWithName("01")
+                    || !checkHaveElementWithName("00000001")
+                    || !checkHaveElementWithName("000001")
+                    || !checkHaveElementWithName("2")) {
                 passTest = false;
-                resultString.append("Дополнительные настройки не изменились\n");
+                addResultString("Дополнительные настройки основной функции блока не изменились (J-Bus)\n", testResult);
             }
         }
-        if (Objects.equals(protocol, "103") && checkHaveElementWithName("1.2")) {
-            maxValue = driver.findElementByName("1.2");
-            maxValue.click();
-            doubleClick();
-            if (!maxValue.getAttribute("Name").equals("2.4")) {
-                passTest = false;
-                resultString.append("Дополнительные настройки максимального значения не изменились\n");
-            }
-        }
-        if (Objects.equals(protocol, "103") && checkHaveElementWithName("1")) {
-            generalFunction = driver.findElementByName("1");
-            generalFunction.click();
-            doubleClick();
-            actions.sendKeys("1" + Keys.ENTER).build().perform();
-            if (!generalFunction.getAttribute("Name").equals("11")) {
-                passTest = false;
-                resultString.append("Дополнительные настройки основной функции блока не изменились\n");
-            }
-        }
+
+//        =======================================================================================
+//        Добавление в список
+
         WindowsElement countElements = null;
         WindowsElement percents = null;
         WindowsElement free = null;
         if (protocol.equals("101") || protocol.equals("104")) {
             countElements = driver.findElementByName("20");
             percents = driver.findElementByName("1%");
-            free = driver.findElementByName("1880");
+            if (checkHaveElementWithName("1778")) {
+                free = driver.findElementByName("1778");
+            } else if (checkHaveElementWithName("1880")) {
+                free = driver.findElementByName("1880");
+            }
         } else if (protocol.equals("103")) {
             countElements = driver.findElementByName("8");
             percents = driver.findElementByName("0%");
-            free = driver.findElementByName("1892");
+            if (checkHaveElementWithName("1790")) {
+                free = driver.findElementByName("1790");
+            } else if (checkHaveElementWithName("1892")) {
+                free = driver.findElementByName("1892");
+            }
+        } else if (protocol.equals("J-Bus")) {
+            countElements = driver.findElementByName("8");
         } else {
             countElements = driver.findElementByName("9");
             percents = driver.findElementByName("0%");
-            free = driver.findElementByName("1891");
+            if (checkHaveElementWithName("1789")) {
+                free = driver.findElementByName("1789");
+            } else if (checkHaveElementWithName("1891")) {
+                free = driver.findElementByName("1891");
+            }
         }
 
         findElementByNameAndClick("Редактировать список");
@@ -1717,10 +1827,18 @@ public class Main {
             System.out.println(discreteInputs.size());
             discreteInputs.get(1).click();
             discreteInputs.get(0).click();
+            sleep(1);
             dragAndDrop(discreteInputs.get(0), -300, 500);
 //            driver.findElementByName("Редактирование списка данных для мониторинга (протокол IEC 60870-5-101)").findElementsByClassName("Button").get(2).click();
             List<WindowsElement> buttons = driver.findElementsByClassName("Button");
             buttons.get(0).click();
+        } else if (protocol.equals("J-Bus")) {
+            WindowsElement discreteInputs = driver.findElementByName("Дискретные входы");
+            dragAndDrop(discreteInputs, -300, 100);
+            sleep(5);
+            driver.findElementByName("Выбор группы для вставки").findElementByName("Регистры").click();
+
+            driver.findElementByName("Выбор группы для вставки").findElementByName("OK").click();
         } else {
             WindowsElement discreteInputs = driver.findElementByName("Дискретные входы");
 //            discreteInputs.click();
@@ -1730,30 +1848,33 @@ public class Main {
             List<WindowsElement> buttons = driver.findElementsByClassName("Button");
             buttons.get(6).click();
         }
-        saveFileWithDirectory(directoryForDocument, "test" + protocol);
-        driver.getKeyboard().sendKeys(Keys.ENTER);
+        if (!protocol.equals("J-Bus")) {
+            saveFileWithDirectory(directoryForDocument, "test" + protocol);
+            driver.getKeyboard().sendKeys(Keys.ENTER);
+        }
         findElementByNameAndClick("OK");
 
-        if ((protocol.equals("101") || protocol.equals("104")) && (countElements.getAttribute("Name").equals("20")
+        if (((protocol.equals("101") || protocol.equals("104")) && (countElements.getAttribute("Name").equals("20")
                 || percents.getAttribute("Name").equals("1%")
-                || free.getAttribute("Name").equals("1880"))) {
-            passTest = false;
-            resultString.append("Список не обновился у протокола ").append(protocol).append("\n");
-        } else if (protocol.equals("103") && (countElements.getAttribute("Name").equals("8")
+                || free.getAttribute("Name").equals("1778")))
+                    ||
+                (protocol.equals("103") && (countElements.getAttribute("Name").equals("8")
                 || percents.getAttribute("Name").equals("0%")
-                || free.getAttribute("Name").equals("1892"))) {
-
-            passTest = false;
-            resultString.append("Список не обновился у протокола ").append(protocol).append("\n");
-        } else if ((protocol.equals("RTU") || protocol.equals("TCP")) && (countElements.getAttribute("Name").equals("9")
+                || free.getAttribute("Name").equals("1790")))
+                    ||
+                ((protocol.equals("RTU") || protocol.equals("TCP")) && (countElements.getAttribute("Name").equals("9")
                 || percents.getAttribute("Name").equals("0%")
-                || free.getAttribute("Name").equals("1891"))) {
-
+                || free.getAttribute("Name").equals("1789")))
+                    ||
+                (protocol.equals("J-Bus") && countElements.getAttribute("Name").equals("8"))) {
             passTest = false;
-            resultString.append("Список не обновился у протокола ").append(protocol).append("\n");
+            addResultString("Список не обновился у протокола " + protocol + "\n", testResult);
         }
 
         recordProject();
+
+//        ========================================================================================================================
+//        Обратное изменение дополнительных настроек
 
         if (protocol.startsWith("10")) {
             if (equipmentLayout == null) {
@@ -1763,10 +1884,7 @@ public class Main {
             equipmentLayout.click();
             doubleClick();
             actions.sendKeys(Keys.BACK_SPACE + "" + Keys.ENTER).build().perform();
-            if (analogValue == null) {
-                analogValue = driver.findElementByName("Первичное");
 
-            }
             if (maxValue == null && protocol.equals("103")) {
                 maxValue = driver.findElementByName("2.4");
                 maxValue.click();
@@ -1778,8 +1896,6 @@ public class Main {
                 doubleClick();
                 actions.sendKeys(Keys.BACK_SPACE + "" + Keys.ENTER).build().perform();
             }
-            analogValue.click();
-            doubleClick();
             timezone.click();
             doubleClick();
 
@@ -1787,38 +1903,114 @@ public class Main {
             doubleClick();
             if (equipmentLayout.getAttribute("Name").equals("Is not set1")
                     && timezone.getAttribute("Name").equals("Да")
-                    && analogValue.getAttribute("Name").equals("Первичное")
                     && clearBuffer.getAttribute("Name").equals("Нет")) {
                 passTest = false;
-                resultString.append("Дополнительные настройки не изменились");
-            }
-        } else {
-            if (analogValue == null) {
-                analogValue = driver.findElementByName("Первичное");
-
-            }
-            analogValue.click();
-            doubleClick();
-            if (analogValue.getAttribute("Name").equals("Первичное")) {
-                passTest = false;
-                resultString.append("Дополнительные настройки не изменились");
+                addResultString("Дополнительные настройки не изменились у протокола " + protocol + "\n", testResult);
             }
         }
+        if (analogValue == null) {
+            analogValue = driver.findElementByName("Первичное");
+
+        }
+        analogValue.click();
+        doubleClick();
+        if (analogValue.getAttribute("Name").equals("Первичное")) {
+            passTest = false;
+            addResultString("Дополнительные настройки не изменились у протокола " + protocol + "\n", testResult);
+        }
+
+        if (protocol.equals("J-Bus")) {
+            List<WindowsElement> allElementsWith0000 = driver.findElementsByName("0001");
+            for (WindowsElement element : allElementsWith0000) {
+                element.click();
+                doubleClick();
+                actions.sendKeys(Keys.BACK_SPACE + "0" + Keys.ENTER).build().perform();
+            }
+
+            if (elementWith00000000 == null) {
+                elementWith00000000 = driver.findElementByName("00000001");
+
+            }
+            elementWith00000000.click();
+            doubleClick();
+            actions.sendKeys(Keys.BACK_SPACE + "0" + Keys.ENTER).build().perform();
+            if (elementWith000000 == null) {
+                elementWith000000 = driver.findElementByName("000001");
+            }
+            elementWith000000.click();
+            doubleClick();
+            actions.sendKeys(Keys.BACK_SPACE + "0" + Keys.ENTER).build().perform();
+
+            if (elementWith00 == null) {
+                elementWith00 = driver.findElementByName("01");
+            }
+            elementWith00.click();
+            doubleClick();
+            actions.sendKeys(Keys.BACK_SPACE + "0" + Keys.ENTER).build().perform();
+
+            if (elementWith1 == null) {
+                elementWith1 = driver.findElementByName("2");
+            }
+            elementWith1.click();
+            doubleClick();
+
+            if (driver.findElementsByName("0001").size() == 10 || checkHaveElementWithName("01")
+                    || checkHaveElementWithName("00000001")
+                    || checkHaveElementWithName("000001")
+                    || checkHaveElementWithName("2")) {
+                passTest = false;
+                addResultString("Дополнительные настройки не изменились у протокола " + protocol + "\n", testResult);
+            }
+        }
+
+//        =======================================================================================
+//        Удаление содержимого списка
+
         findElementByNameAndClick("Редактировать список");
+        driver = configDriver;
+        actions = new Actions(driver);
 
         if (protocol.equals("101") || protocol.equals("104")) {
             findElementByNameAndClick("[+] Дискретные входы");
             doubleClick();
-            for (int i = 0; i < 24; i++) {
-                actions.sendKeys(Keys.DOWN).sendKeys(Keys.DELETE).build().perform();
+            int countInputs = driver.findElementsByName("M_SP_TB_1").size();
+            System.out.println(countInputs);
+            for (int i = 0; i <= countInputs; i++) {
+//                actions.click().build().perform();
+                actions.sendKeys(Keys.DOWN).build().perform();
+                actions.sendKeys(Keys.DELETE).build().perform();
+//                driver.getKeyboard().sendKeys(Keys.DOWN + "" + Keys.DELETE);
+//                System.out.println("delete input");
             }
+            if (checkHaveElementWithName("M_SP_TB_1")) {
+                for (int i = 0; i <= countInputs; i++) {
+                    findElementByNameAndClick("M_SP_TB_1");
+                    driver.getKeyboard().sendKeys(Keys.DELETE);
+                }
+            }
+            if (checkHaveElementWithName("M_SP_TB_1")) {
+                passTest = false;
+                addResultString("В протоколе " + protocol + " не очистился список\n", testResult);
+            }
+
         } else if (protocol.equals("103")) {
             sleep(5);
             List<WindowsElement> discreteInputs = driver.findElementsByName("Дискретные входы");
             discreteInputs.get(1).click();
+            sleep(1);
             findElementByNameAndClick("[Я1] РПО");
             for (int i = 0; i < 23; i++) {
-                actions.sendKeys(Keys.DELETE).sendKeys(Keys.DOWN).build().perform();
+                actions.sendKeys(Keys.DELETE + "" + Keys.DOWN).build().perform();
+//                driver.getKeyboard().sendKeys(Keys.DELETE + "" + Keys.DOWN);
+            }
+        } else if (protocol.equals("J-Bus")) {
+            findElementByNameAndClick("[+] Регистры");
+            doubleClick();
+            sleep(1);
+            findElementByNameAndClick("[Я1] РПО");
+            for (int i = 0; i < 23; i++) {
+                actions.sendKeys(Keys.DELETE).build().perform();
+                driver.getKeyboard().sendKeys(Keys.DELETE);
             }
         } else {
             findElementByNameAndClick("[+] Дискретные входы (Discrete Inputs)");
@@ -1826,27 +2018,39 @@ public class Main {
             actions.sendKeys(Keys.DOWN).build().perform();
             for (int i = 0; i < 24; i++) {
                 actions.sendKeys(Keys.DELETE).build().perform();
+                driver.getKeyboard().sendKeys(Keys.DELETE);
             }
         }
 
         findElementByNameAndClick("OK");
 
-        if ((protocol.equals("101") || protocol.equals("104")) && (!countElements.getAttribute("Name").equals("20")
-                || !percents.getAttribute("Name").equals("1%")
-                || !free.getAttribute("Name").equals("1880"))) {
+        if ((protocol.equals("101") || protocol.equals("104"))) {
+            if (!countElements.getAttribute("Name").equals("20")
+                    || !percents.getAttribute("Name").equals("1%")
+                    || !(free.getAttribute("Name").equals("1778")
+                    || free.getAttribute("Name").equals("1880"))) {
+                passTest = false;
+                addResultString("Список не обновился у протокола " + protocol + "\n", testResult);
+            }
+        } else if (protocol.equals("103")) {
+            if (!countElements.getAttribute("Name").equals("8")
+                    || !percents.getAttribute("Name").equals("0%")
+                    || !(free.getAttribute("Name").equals("1790")
+                    || free.getAttribute("Name").equals("1892"))) {
+                passTest = false;
+                addResultString("Список не обновился у протокола " + protocol + "\n", testResult);
+            }
+        } else if ((protocol.equals("RTU") || protocol.equals("TCP"))) {
+            if (!countElements.getAttribute("Name").equals("9")
+                    || !percents.getAttribute("Name").equals("0%")
+                    || !(free.getAttribute("Name").equals("1789")
+                    || free.getAttribute("Name").equals("1891"))) {
+                passTest = false;
+                addResultString("Список не обновился у протокола " + protocol + "\n", testResult);
+            }
+        } else if (protocol.equals("J-Bus") && !countElements.getAttribute("Name").equals("8")) {
             passTest = false;
-            resultString.append("Список не обновился у протокола ").append(protocol).append("\n");
-        } else if (protocol.equals("103") && (!countElements.getAttribute("Name").equals("8")
-                || !percents.getAttribute("Name").equals("0%")
-                || !free.getAttribute("Name").equals("1892"))) {
-
-            passTest = false;
-            resultString.append("Список не обновился у протокола ").append(protocol).append("\n");
-        } else if ((protocol.equals("RTU") || protocol.equals("TCP")) && (!countElements.getAttribute("Name").equals("9")
-                || !percents.getAttribute("Name").equals("0%")
-                || !free.getAttribute("Name").equals("1891"))) {
-            passTest = false;
-            resultString.append("Список не обновился у протокола ").append(protocol).append("\n");
+            addResultString("Список не обновился у протокола " + protocol + "\n", testResult);
         }
 
         recordProject();
@@ -1869,7 +2073,8 @@ public class Main {
         allElementsWithSubItems.get(0).click();
     }
 
-    public static void editTime(int hour, int minute, int second) {
+    public static void editTime(int hour, int minute, int second) throws InterruptedException {
+        sleep(2);
         List<WindowsElement> timeUnits = driver.findElementsByClassName("Edit");
         timeUnits.get(0).click();
         doubleClick();
@@ -1906,6 +2111,19 @@ public class Main {
         findElementByNameAndClick("Удалить элемент");
         driver = configDriver;
         findElementByNameAndClick("Да");
+    }
+
+    public static void connect() throws MalformedURLException, InterruptedException {
+        if (properties.getJSONObject("debug").getBoolean("needToConnect")) {
+            findElementByNameAndClick("Подключиться (Ctrl+Q)");
+            System.out.println("Connect");
+//                driver.getKeyboard().sendKeys(Keys.CONTROL + "q" + Keys.CONTROL);
+            sleep(15);
+
+            differentProperties();
+            hideInformation();
+            driver = configDriver;
+        }
     }
 
     public static void findElementByNameAndClick(String name) {
@@ -1959,7 +2177,7 @@ public class Main {
     public static boolean openFile(String name) throws InterruptedException {
         try {
             addToCopyBuffer(name);
-            driver.findElementByClassName("ComboBox").findElementByName("Имя файла:").sendKeys(Keys.CONTROL + "v" + Keys.ENTER);
+            driver.findElementByClassName("ComboBox").findElementByName("Имя файла:").sendKeys(Keys.CONTROL + "v" + Keys.CONTROL + Keys.ENTER);
             LOGGER.debug("Открывается файл - " + name);
             Thread.sleep(10000);
         } catch (NoSuchElementException e) {
@@ -1993,7 +2211,7 @@ public class Main {
     public static boolean saveFile(String name) throws InterruptedException {
         try {
             addToCopyBuffer(name);
-            driver.findElementByClassName("Edit").findElementByName("Имя файла:").sendKeys(Keys.CONTROL + "v" + Keys.ENTER);
+            driver.findElementByClassName("Edit").findElementByName("Имя файла:").sendKeys(Keys.CONTROL + "v" + Keys.CONTROL + Keys.ENTER);
             LOGGER.debug("Сохраняется файл - " + name);
             Thread.sleep(10000);
         } catch (NoSuchElementException e) {
@@ -2078,7 +2296,7 @@ public class Main {
     public static void openApp(DesiredCapabilities appCap) throws MalformedURLException, InterruptedException {
         if (properties.getJSONObject("debug").getBoolean("useOpenConf")) {
             choiceWindowsRoot();
-            choiceWindowWithName("БФПО-152-КСЗ-01_25.sth_a - Конфигуратор-МТ");
+            choiceWindowWithName(pmkName + " - Конфигуратор-МТ");
         } else {
             try {
                 driver = new WindowsDriver<WindowsElement>(new URL(urlWinApp), appCap);
@@ -2288,83 +2506,187 @@ public class Main {
     }
 
     public static void testRunner(String testName) {
+        TestResult testResult = new TestResult(testName);
         resultString.append("\nТест: ").append(testName);
         try {
             checkSystemError();
-            choiceTestByName(testName);
-            resultString.append(" - завершился удачно с 1 попытки");
+            choiceTestByName(testName, testResult);
+            addResultString("завершился удачно с 1 попытки", testResult);
         } catch (Exception e1) {
             checkSaveProject(false);
             closeConfigurator();
             closeDriver();
             try {
-                catchException("1 попытка теста: {} прошла неудачно", testName, e1);
-                choiceTestByName(testName);
-                resultString.append("завершился удачно с 2 попытки");
+                catchException("1 попытка теста: {} прошла неудачно", testName, e1, testResult);
+                choiceTestByName(testName, testResult);
+                addResultString("завершился удачно с 2 попытки", testResult);
             } catch (Exception e2) {
                 closeConfigurator();
                 closeDriver();
                 try {
-                    catchException("2 попытка теста: {} прошла неудачно", testName, e2);
-                    choiceTestByName(testName);
-                    resultString.append("завершился удачно с 3 попытки");
+                    catchException("2 попытка теста: {} прошла неудачно", testName, e2, testResult);
+                    choiceTestByName(testName, testResult);
+                    addResultString("завершился удачно с 3 попытки", testResult);
                 } catch (Exception e3) {
-                    catchException("3 попытка теста: {} прошла неудачно", testName, e3);
+                    catchException("3 попытка теста: {} прошла неудачно", testName, e3, testResult);
                     closeConfigurator();
                     closeDriver();
                     testStatus = 1;
-                    resultString.append("завершился неудачно все 3 раза");
+                    addResultString("завершился неудачно все 3 раза", testResult);
                 }
             }
         }
+        allTestResults.add(testResult);
     }
 
-    public static void choiceTestByName(String testName) throws Exception {
+    public static void addResultString(String massage, TestResult testResult) {
+        testResult.pass(massage);
+        resultString.append(massage);
+    }
+
+    public static void choiceTestByName(String testName, TestResult testResult) throws Exception {
         closeConfigurator();
+        sleep(3);
         switch (testName) {
             case "TC_ARM_CFG_Compile":
-                TC_ARM_CFG_Compile();
+                TC_ARM_CFG_Compile(testResult);
                 break;
             case "TC_redundancy_protocol":
-                TCRedundancyProtocols();
+                TCRedundancyProtocols(testResult);
                 break;
             case "TC_change_project_param_and_get_osc":
-                TCChangeProjectParamAndGetOsc();
+                TCChangeProjectParamAndGetOsc(testResult);
                 break;
             case "TC_rename_input_output":
-                TCRenameInputOutput();
+                TCRenameInputOutput(testResult);
                 break;
             case "TC_add_components_area":
-                TCAddComponentsArea();
+                TCAddComponentsArea(testResult);
                 break;
             case "TC_download_document":
-                TCDownloadDocument();
+                TCDownloadDocument(testResult);
                 break;
             case "TC_Ethernet_connect":
-                TCEthernetConnect();
+                TCEthernetConnect(testResult);
                 break;
             case "TC_USB_Connection":
-                TCUSBConnection();
+                TCUSBConnection(testResult);
                 break;
             case "TC_Link_MT":
-                TCLinkMT();
+                TCLinkMT(testResult);
                 break;
             case "TC_download_blanks":
-                TCDownloadBlanks();
+                TCDownloadBlanks(testResult);
                 break;
             case "TC_save_block_image":
-                TCSaveBlockImage();
+                TCSaveBlockImage(testResult);
                 break;
             case "TC_interrupt_transmission":
-                TCInterruptTransmission();
+                TCInterruptTransmission(testResult);
                 break;
             case "TC_setting_ASU":
-                TCSettingASU();
+                TCSettingASU(testResult);
                 break;
         }
     }
 
     public static void doubleClick() {
         actions.doubleClick().build().perform();
+    }
+
+    public static void writeTestResults(LocalDateTime startTest) {
+        String directory = properties.getJSONObject("paths").getString("pathToResultExcel");
+        HSSFWorkbook workbook = new HSSFWorkbook();
+        HSSFSheet sheet = workbook.createSheet();
+        HSSFCellStyle style = createStileForValue(workbook);
+        HSSFCellStyle titleStyle = createStileForTitle(workbook);
+        rowNaming(sheet, titleStyle);
+
+        int rowNum = 1;
+        for (int i = 0; i < allTestResults.size(); i++) {
+            Row testRow = sheet.createRow(rowNum);
+            TestResult result = allTestResults.get(i);
+            writeCall(0, testRow, result.getTestName(), style);
+            writeCall(3, testRow, result.getResultString(), style);
+            for (int j = 1; j < result.getRunsCount(); j++) {
+                if (!result.isPassTest() || j < result.getRunsCount()) {
+                    writeCall(6 + j, testRow, "-", titleStyle);
+                    writeCall(6 + (4 * j), testRow, result.getComments().get(j - 1), style);
+                    writeCall(18 + (4 * j), testRow, result.getExceptions().get(j - 1), style);
+                } else {
+                    writeCall(6 + j, testRow, "+", titleStyle);
+                    writeCall(6 + (4 * j), testRow, result.getComments().get(j - 1), style);
+                }
+            }
+            mergedCells(rowNum, sheet);
+            rowNum++;
+        }
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH.mm.ss");
+        File resultFile = new File(directory +
+                "\\Результаты тестирования конфигуратора " + LocalDateTime.now().format(formatter) + ".xls");
+        resultFile.getParentFile().mkdirs();
+        try (FileOutputStream outFile = new FileOutputStream(resultFile)) {
+            workbook.write(outFile);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void rowNaming(HSSFSheet sheet, HSSFCellStyle style) {
+        Row rowForNaming = sheet.createRow(0);
+
+        writeCall(0, rowForNaming, "Название теста", style);
+        writeCall(3, rowForNaming, "Результаты тестирования", style);
+        writeCall(7, rowForNaming, "1 прогон", style);
+        writeCall(8, rowForNaming, "2 прогон", style);
+        writeCall(9, rowForNaming, "3 прогон", style);
+        writeCall(10, rowForNaming, "Замечания 1 прогона", style);
+        writeCall(14, rowForNaming, "Замечания 2 прогона", style);
+        writeCall(18, rowForNaming, "Замечания 3 прогона", style);
+        writeCall(22, rowForNaming, "Описание ошибки 1 прогона", style);
+        writeCall(26, rowForNaming, "Описание ошибки 2 прогона", style);
+        writeCall(30, rowForNaming, "Описание ошибки 3 прогона", style);
+        mergedCells(0, sheet);
+    }
+
+    private static void mergedCells(int rowNum, HSSFSheet sheet) {
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 0, 2));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 3, 6));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 10, 13));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 14, 17));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 18, 21));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 22, 25));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 26, 29));
+        sheet.addMergedRegion(new CellRangeAddress(rowNum, rowNum, 30, 39));
+    }
+
+    private static void writeCall(int cellNum, Row row, String cellValue, HSSFCellStyle style) {
+        Cell cell = row.createCell(cellNum, CellType.STRING);
+        cell.setCellValue(cellValue);
+        cell.setCellStyle(style);
+    }
+
+    private static HSSFCellStyle createStileForTitle(HSSFWorkbook workbook) {
+        HSSFFont font = workbook.createFont();
+        font.setBold(true);
+        font.setFontHeight((short) 240);
+        font.setFontName("Times New Roman");
+        HSSFCellStyle style = workbook.createCellStyle();
+
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        return style;
+    }
+
+    private static HSSFCellStyle createStileForValue(HSSFWorkbook workbook) {
+        HSSFFont font = workbook.createFont();
+        font.setFontHeight((short) 240);
+        font.setFontName("Times New Roman");
+        HSSFCellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        return style;
     }
 }
